@@ -1,0 +1,176 @@
+﻿@page
+@model GptAnalytics.Pages.IndexModel
+@{
+    ViewData["Title"] = "Chat with ChatGPT";
+}
+<div class="text-center">
+    <form method="post" asp-page-handler="NewSession" style="margin-bottom: 20px; text-align: right;">
+        <button type="submit" class="btn btn-danger">New Session</button>
+    </form>
+
+
+
+    <div id="chat-container">
+        @if (Model.IsChatVisible)
+        {
+            <div id="chat-history" style="border: 1px solid #ccc; padding: 10px; height: 500px; overflow-y: scroll;">
+                @foreach (var message in Model.ChatHistory)
+                {
+                    <div class="chat-message @(message.Sender == "User" ? "user-message" : "chatgpt-message")">
+                        @if (message.Sender == "chatgpt-message")
+                        {
+                            <p><strong>@message.Sender:</strong> @Html.Raw(message.Text)</p>
+                        }
+                        else
+                        {
+                            <p><strong>@message.Sender:</strong> @message.Text</p>
+                        }
+                    </div>
+                }
+            </div>
+            @if (Model.GptResponseHtml != null)
+            {
+                <br />
+
+                <br />
+            @Html.Raw(Model.GptResponseHtml)
+                <br />
+
+                <br />
+            }
+        }
+        <form id="chat-form" method="post" asp-page-handler="SendMessage" style="text-align: right;">
+            <textarea id="userMessage" name="userMessage" placeholder="Type your message here..." style="width: 100%; height: 50px;"></textarea>
+            <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Send</button>
+        </form>
+    </div>
+
+
+    @if (Model.UploadedFiles != null && Model.UploadedFiles.Any())
+    {
+        <br /><br />
+        <h3>Uploaded Data Files</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var file in Model.UploadedFiles)
+                {
+                    <tr>
+                        <td>@file</td>
+                        <td>
+                            <form method="post" asp-page-handler="RemoveFile">
+                                <input type="hidden" name="fileName" value="@file" />
+                                <button type="submit" class="btn btn-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <div class="file-upload-section" style="border: 2px dashed #007bff; padding: 20px; margin-top: 20px; background-color: #f8f9fa; border-radius: 10px;">
+        <h4>Upload a Data File</h4>
+        <form method="post" enctype="multipart/form-data" asp-page-handler="UploadFile">
+            <input type="file" name="uploadedFile" accept=".csv, .xlsx" style="margin-bottom: 10px;" />
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+    </div>
+</div>
+<br /><br />
+<div class="text-center upload-instructions-section">
+    @if (Model.UploadedInstructionFiles != null && Model.UploadedInstructionFiles.Any())
+    {
+        <h3>Uploaded Instruction Files</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var file in Model.UploadedInstructionFiles)
+                {
+                    <tr>
+                        <td>@file</td>
+                        <td>
+                            <form method="post" asp-page-handler="RemoveInstructionFile">
+                                <input type="hidden" name="fileName" value="@file" />
+                                <button type="submit" class="btn btn-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <div class="file-upload-section" style="border: 2px dashed #007bff; padding: 20px; margin-top: 20px; background-color: #f8f9fa; border-radius: 10px;">
+        <h4>Upload an Instruction File</h4>
+        <form method="post" enctype="multipart/form-data" asp-page-handler="UploadInstructionFile">
+            <input type="file" name="instructionFile" accept=".txt, .pdf, .docx" style="margin-bottom: 10px;" />
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+    </div>
+</div>
+<script>
+    document.getElementById('userMessage').addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // Prevents adding a new line
+            document.getElementById('chat-form').submit(); // Submits the form
+        }
+    });
+</script>
+
+<style>
+    #chat-history {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-message {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 70%;
+    }
+
+    .user-message {
+        background-color: #e0f7fa;
+        align-self: flex-start;
+        text-align: left;
+    }
+
+    .chatgpt-message {
+        background-color: #f1f8e9;
+        align-self: flex-end;
+        text-align: right;
+    }
+</style>
+<script>
+    // Function to scroll the chat history to the bottom
+    function scrollToBottom() {
+        var chatHistory = document.getElementById('chat-history');
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    // Call the function after the page loads
+    window.onload = function () {
+        scrollToBottom();
+        document.getElementById('userMessage').focus(); // Set focus to the input box
+    };
+
+    // Call the function after form submission
+    document.getElementById('chat-form').addEventListener('submit', function () {
+        setTimeout(function () {
+            scrollToBottom();
+            document.getElementById('userMessage').focus(); // Set focus back to the input box
+        }, 100); // Delay to ensure new messages are rendered
+    });
+</script>
